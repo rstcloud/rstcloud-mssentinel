@@ -1,6 +1,6 @@
-# Threat Intelligence Enrichment Playbooks for Azure Sentinel
+# Threat Intelligence Enrichment Playbooks for Microsoft Sentinel
 
-This repository contains Azure Logic Apps and scripts designed to work with threat intelligence in Azure Sentinel. The SOAR playbooks integrate with the RST Cloud API, fetching detailed threat intelligence information for IP addresses, domains, URLs, and file hashes associated with security incidents.
+This repository contains Azure Logic Apps and scripts designed to work with threat intelligence in Microsoft Sentinel. The SOAR playbooks integrate with the RST Cloud API, fetching detailed threat intelligence information for IP addresses, domains, URLs, and file hashes associated with security incidents.
 
 ## Content Descriptions
 
@@ -9,7 +9,7 @@ This repository contains Azure Logic Apps and scripts designed to work with thre
    - Gives an answer if an IP, Domain, URL, or Hash can be considered as malicious
    - Automates the enrichment process using the RST IoC Lookup.
    - Separates processing for IP, URL, and hash entities for modular customisation.
-   - Integrates enriched threat intelligence as comments in Azure Sentinel incidents.
+   - Integrates enriched threat intelligence as comments in Microsoft Sentinel incidents.
    - [Learn More](LogicApps/rst-ioc-lookup/README.md)
 
 2. **Azure Logic App - Enrich multiple entities - RST Noise Control**
@@ -17,7 +17,7 @@ This repository contains Azure Logic Apps and scripts designed to work with thre
    - Gives an answer if an IP, Domain, URL, or Hash is a known-good or a very popular value that can be considered as noise
    - Automates the enrichment process using the RST Noise Control.
    - Separates processing for IP, URL, and hash entities for modular customisation.
-   - Integrates enriched threat intelligence as comments in Azure Sentinel incidents.
+   - Integrates enriched threat intelligence as comments in Microsoft Sentinel incidents.
    - [Learn More](LogicApps/rst-ioc-lookup/README.md)
 
 3. **Script - Bulk IoC Removal**
@@ -31,4 +31,4 @@ This repository contains Azure Logic Apps and scripts designed to work with thre
 - [RST IoC Lookup](https://www.rstcloud.com/rst-ioc-lookup/)
 - [RST Noise Control](https://www.rstcloud.com/rst-noise-control/)
 
-Feel free to explore, adapt, and contribute to enhance threat intelligence capabilities in your Azure Sentinel environment. For detailed information about each playbook and the handy script, refer to the respective links provided.
+Feel free to explore, adapt, and contribute to enhance threat intelligence capabilities in your Microsoft Sentinel environment. For detailed information about each playbook and the handy script, refer to the respective links provided.

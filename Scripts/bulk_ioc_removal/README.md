@@ -29,8 +29,8 @@ python script_name.py -r <workspace_resource_group> -n <workspace_name> -s <subs
 
 ### Parameters
 
-- `-r, --workspace-rg`: Resource Group of the Azure Sentinel workspace.
-- `-n, --workspace-name`: Name of the Azure Sentinel workspace.
+- `-r, --workspace-rg`: Resource Group of the Microsoft Sentinel workspace.
+- `-n, --workspace-name`: Name of the Microsoft Sentinel workspace.
 - `-s, --subscription-id`: Azure Subscription ID.
 - `-k, --keyword`: Keyword used to search for Indicators of Compromise (IoCs).
 
@@ -38,7 +38,7 @@ python script_name.py -r <workspace_resource_group> -n <workspace_name> -s <subs
 
 1. **Azure Threat Intelligence Indicator Retrieval**
 
-   The script queries the Threat Intelligence Indicators in the specified Azure Sentinel workspace based on the provided keyword. It retrieves the indicators in batches of 100 entries until no more indicators are found.
+   The script queries the Threat Intelligence Indicators in the specified Microsoft Sentinel workspace based on the provided keyword. It retrieves the indicators in batches of 100 entries until no more indicators are found.
 
 2. **Indicator Deletion**
 
