@@ -1,0 +1,1110 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Entities_-_Get_FileHashes": {
+                "inputs": {
+                    "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/entities/filehash"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Entities_-_Get_IPs": {
+                "inputs": {
+                    "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/entities/ip"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Entities_-_Get_URLs": {
+                "inputs": {
+                    "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/entities/url"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Filter_DNSEntityArray": {
+                "inputs": {
+                    "from": "@variables('DNSEntityArray')",
+                    "where": "@equals(item()?['kind'], 'DnsResolution')"
+                },
+                "runAfter": {
+                    "Initialize_DNSEntityArray": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Query"
+            },
+            "For_each_Domain": {
+                "actions": {
+                    "Avoid_checking_internal_or_trusted_Hosts": {
+                        "actions": {
+                            "Lookup_Host_in_RST_IoC_Lookup": {
+                                "actions": {
+                                    "Add_comment_to_incident_(V3)_4": {
+                                        "inputs": {
+                                            "body": {
+                                                "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                "message": "<p>Found a match for @{body('Parse_JSON_Domain')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_Domain')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Domain')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Domain')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_Domain')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_Domain')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_Domain')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_Domain')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_Domain')}</p>"
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/Incidents/Comment"
+                                        },
+                                        "runAfter": {
+                                            "Parse_JSON_Domain": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ApiConnection"
+                                    },
+                                    "Lookup_Domain_-_GET": {
+                                        "inputs": {
+                                            "headers": {
+                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                            },
+                                            "method": "GET",
+                                            "uri": "https://api.rstcloud.net/v1/ioc?value=@{items('Lookup_Host_in_RST_IoC_Lookup')}"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Http"
+                                    },
+                                    "Parse_JSON_Domain": {
+                                        "inputs": {
+                                            "content": "@body('Lookup_Domain_-_GET')",
+                                            "schema": {
+                                                "properties": {
+                                                    "collect": {
+                                                        "type": "string"
+                                                    },
+                                                    "cve": {
+                                                        "type": "array"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "fp": {
+                                                        "properties": {
+                                                            "alarm": {
+                                                                "type": "string"
+                                                            },
+                                                            "descr": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "fseen": {
+                                                        "type": "string"
+                                                    },
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "industry": {
+                                                        "type": "array"
+                                                    },
+                                                    "ioc_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "ioc_value": {
+                                                        "type": "string"
+                                                    },
+                                                    "lseen": {
+                                                        "type": "string"
+                                                    },
+                                                    "ports": {
+                                                        "items": {
+                                                            "type": "string"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "resolved": {
+                                                        "properties": {
+                                                            "ip": {
+                                                                "properties": {
+                                                                    "a": {
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "type": "array"
+                                                                    },
+                                                                    "alias": {
+                                                                        "type": "array"
+                                                                    },
+                                                                    "cname": {
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "whois": {
+                                                                "properties": {
+                                                                    "age": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "created": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "expires": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "havedata": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "registrant": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "registrar": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "updated": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "score": {
+                                                        "properties": {
+                                                            "frequency": {
+                                                                "type": "string"
+                                                            },
+                                                            "src": {
+                                                                "type": "string"
+                                                            },
+                                                            "tags": {
+                                                                "type": "string"
+                                                            },
+                                                            "total": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "src": {
+                                                        "properties": {
+                                                            "name": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "report": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "tags": {
+                                                        "properties": {
+                                                            "codes": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "str": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "threat": {
+                                                        "items": {
+                                                            "type": "string"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "ttp": {
+                                                        "type": "array"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Lookup_Domain_-_GET": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ParseJson"
+                                    }
+                                },
+                                "foreach": "@array(items('For_each_Domain')['properties']['domainName'])",
+                                "runAfter": {},
+                                "type": "Foreach"
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "contains": [
+                                        "",
+                                        "."
+                                    ]
+                                },
+                                {
+                                    "not": {
+                                        "contains": [
+                                            "@string(parameters('trusted_domains'))",
+                                            "@items('For_each_Domain')['properties']['domainName']"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        "runAfter": {},
+                        "type": "If"
+                    }
+                },
+                "foreach": "@body('Filter_DNSEntityArray')",
+                "runAfter": {
+                    "Filter_DNSEntityArray": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "For_each_Hash": {
+                "actions": {
+                    "Add_comment_to_incident_(V3)_3": {
+                        "inputs": {
+                            "body": {
+                                "incidentArmId": "@triggerBody()?['object']?['id']",
+                                "message": "<p>Found a match for @{body('Parse_JSON_Hash')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_Hash')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Hash')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Hash')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_Hash')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_Hash')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_Hash')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_Hash')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_Hash')}</p>"
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/Incidents/Comment"
+                        },
+                        "runAfter": {
+                            "Parse_JSON_Hash": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "ApiConnection"
+                    },
+                    "Lookup_a_Hash_in_RST_IoC_Lookup": {
+                        "inputs": {
+                            "headers": {
+                                "X-Api-Key": "@parameters('rst_api_key')"
+                            },
+                            "method": "GET",
+                            "uri": "https://api.rstcloud.net/v1/ioc?value=@{items('For_each_Hash')?['Value']}"
+                        },
+                        "runAfter": {},
+                        "type": "Http"
+                    },
+                    "Parse_JSON_Hash": {
+                        "inputs": {
+                            "content": "@body('Lookup_a_Hash_in_RST_IoC_Lookup')",
+                            "schema": {
+                                "properties": {
+                                    "collect": {
+                                        "type": "string"
+                                    },
+                                    "cve": {
+                                        "type": "array"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "filename": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    },
+                                    "fp": {
+                                        "properties": {
+                                            "alarm": {
+                                                "type": "string"
+                                            },
+                                            "descr": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "fseen": {
+                                        "type": "string"
+                                    },
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "industry": {
+                                        "type": "array"
+                                    },
+                                    "ioc_type": {
+                                        "type": "string"
+                                    },
+                                    "ioc_value": {
+                                        "type": "string"
+                                    },
+                                    "lseen": {
+                                        "type": "string"
+                                    },
+                                    "md5": {
+                                        "type": "string"
+                                    },
+                                    "score": {
+                                        "properties": {
+                                            "frequency": {
+                                                "type": "string"
+                                            },
+                                            "src": {
+                                                "type": "string"
+                                            },
+                                            "tags": {
+                                                "type": "string"
+                                            },
+                                            "total": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "sha1": {
+                                        "type": "string"
+                                    },
+                                    "sha256": {
+                                        "type": "string"
+                                    },
+                                    "src": {
+                                        "properties": {
+                                            "name": {
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "report": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "tags": {
+                                        "properties": {
+                                            "codes": {
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "str": {
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "type": "array"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "threat": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    },
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "ttp": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "runAfter": {
+                            "Lookup_a_Hash_in_RST_IoC_Lookup": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "ParseJson"
+                    }
+                },
+                "foreach": "@union(body('Entities_-_Get_FileHashes')?['Filehashes'],body('Entities_-_Get_FileHashes')?['Filehashes'])",
+                "runAfter": {
+                    "Entities_-_Get_FileHashes": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "For_each_IP": {
+                "actions": {
+                    "For_each_trusted_IP_pattern": {
+                        "actions": {
+                            "Check_if_matches_any_trusted_pattern": {
+                                "actions": {
+                                    "Set_variable": {
+                                        "inputs": {
+                                            "name": "Trusted_IP_Flag",
+                                            "value": false
+                                        },
+                                        "runAfter": {},
+                                        "type": "SetVariable"
+                                    }
+                                },
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "startsWith": [
+                                                "@items('For_each_IP')?['Address']",
+                                                ""
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "runAfter": {},
+                                "type": "If"
+                            }
+                        },
+                        "foreach": "@parameters('trusted_ips')",
+                        "runAfter": {},
+                        "type": "Foreach"
+                    },
+                    "Lookup_if_not_trusted": {
+                        "actions": {
+                            "Lookup_IP_in_RST_IoC_Lookup": {
+                                "actions": {
+                                    "Add_comment_to_incident_(V3)": {
+                                        "inputs": {
+                                            "body": {
+                                                "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                "message": "<p>Found a match for @{body('Parse_JSON_IP')?['ioc_value']}<br>\nThe score is <strong></strong><strong>@{body('Parse_JSON_IP')?['score']?['total']}</strong><strong></strong>. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_IP')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_IP')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_IP')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_IP')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_IP')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_IP')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<span style=\"font-size: 8px\"><br>\n</span><span style=\"font-size: 10px\"></span><span style=\"font-size: 10px\">@{body('Parse_JSON_IP')}</span><span style=\"font-size: 10px\"></span></p>"
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/Incidents/Comment"
+                                        },
+                                        "runAfter": {
+                                            "Parse_JSON_IP": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ApiConnection"
+                                    },
+                                    "Lookup_IP_-_GET": {
+                                        "inputs": {
+                                            "headers": {
+                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                            },
+                                            "method": "GET",
+                                            "uri": "https://api.rstcloud.net/v1/ioc?value=@{items('Lookup_IP_in_RST_IoC_Lookup')?['Address']}"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Http"
+                                    },
+                                    "Parse_JSON_IP": {
+                                        "inputs": {
+                                            "content": "@body('Lookup_IP_-_GET')",
+                                            "schema": {
+                                                "properties": {
+                                                    "asn": {
+                                                        "properties": {
+                                                            "cloud": {
+                                                                "type": "string"
+                                                            },
+                                                            "domains": {
+                                                                "type": "string"
+                                                            },
+                                                            "firstip": {
+                                                                "properties": {
+                                                                    "netv4": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "num": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "isp": {
+                                                                "type": "string"
+                                                            },
+                                                            "lastip": {
+                                                                "properties": {
+                                                                    "netv4": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "num": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "num": {
+                                                                "type": "string"
+                                                            },
+                                                            "org": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "collect": {
+                                                        "type": "string"
+                                                    },
+                                                    "cve": {
+                                                        "type": "array"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "fp": {
+                                                        "properties": {
+                                                            "alarm": {
+                                                                "type": "string"
+                                                            },
+                                                            "descr": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "fseen": {
+                                                        "type": "string"
+                                                    },
+                                                    "geo": {
+                                                        "properties": {
+                                                            "city": {
+                                                                "type": "string"
+                                                            },
+                                                            "country": {
+                                                                "type": "string"
+                                                            },
+                                                            "region": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "industry": {
+                                                        "type": "array"
+                                                    },
+                                                    "ioc_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "ioc_value": {
+                                                        "type": "string"
+                                                    },
+                                                    "lseen": {
+                                                        "type": "string"
+                                                    },
+                                                    "ports": {
+                                                        "items": {
+                                                            "type": "string"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "related": {
+                                                        "properties": {
+                                                            "domains": {
+                                                                "type": "array"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "score": {
+                                                        "properties": {
+                                                            "frequency": {
+                                                                "type": "string"
+                                                            },
+                                                            "src": {
+                                                                "type": "string"
+                                                            },
+                                                            "tags": {
+                                                                "type": "string"
+                                                            },
+                                                            "total": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "src": {
+                                                        "properties": {
+                                                            "name": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "report": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "tags": {
+                                                        "properties": {
+                                                            "codes": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "str": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "threat": {
+                                                        "type": "array"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "ttp": {
+                                                        "type": "array"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Lookup_IP_-_GET": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ParseJson"
+                                    }
+                                },
+                                "foreach": "@array(items('For_each_IP'))",
+                                "runAfter": {},
+                                "type": "Foreach"
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "equals": [
+                                        "@variables('Trusted_IP_Flag')",
+                                        false
+                                    ]
+                                }
+                            ]
+                        },
+                        "runAfter": {
+                            "For_each_trusted_IP_pattern": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "If"
+                    }
+                },
+                "foreach": "@union(body('Entities_-_Get_IPs')?['IPs'],body('Entities_-_Get_IPs')?['IPs'])",
+                "runAfter": {
+                    "Initialize_variable_for_IP_flag": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "For_each_URL": {
+                "actions": {
+                    "Avoid_checking_internal_or_trusted_URLs": {
+                        "actions": {
+                            "Lookup_URL_in_RST_IoC_Lookup": {
+                                "actions": {
+                                    "Add_comment_to_incident_(V3)_2": {
+                                        "inputs": {
+                                            "body": {
+                                                "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                "message": "<p>Found a match for @{body('Parse_JSON_URL')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_URL')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_URL')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_URL')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_URL')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_URL')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_URL')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_URL')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_URL')}</p>"
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/Incidents/Comment"
+                                        },
+                                        "runAfter": {
+                                            "Parse_JSON_URL": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ApiConnection"
+                                    },
+                                    "Lookup_URL_-_GET": {
+                                        "inputs": {
+                                            "headers": {
+                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                            },
+                                            "method": "GET",
+                                            "uri": "https://api.rstcloud.net/v1/ioc?value=@{items('Lookup_URL_in_RST_IoC_Lookup')?['Url']}"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Http"
+                                    },
+                                    "Parse_JSON_URL": {
+                                        "inputs": {
+                                            "content": "@body('Lookup_URL_-_GET')",
+                                            "schema": {
+                                                "properties": {
+                                                    "collect": {
+                                                        "type": "string"
+                                                    },
+                                                    "cve": {
+                                                        "type": "array"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "fp": {
+                                                        "properties": {
+                                                            "alarm": {
+                                                                "type": "string"
+                                                            },
+                                                            "descr": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "fseen": {
+                                                        "type": "string"
+                                                    },
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "industry": {
+                                                        "type": "array"
+                                                    },
+                                                    "ioc_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "ioc_value": {
+                                                        "type": "string"
+                                                    },
+                                                    "lseen": {
+                                                        "type": "string"
+                                                    },
+                                                    "parsed": {
+                                                        "properties": {
+                                                            "anchor": {},
+                                                            "domain": {
+                                                                "type": "string"
+                                                            },
+                                                            "params": {},
+                                                            "path": {
+                                                                "type": "string"
+                                                            },
+                                                            "port": {
+                                                                "type": "string"
+                                                            },
+                                                            "schema": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "resolved": {
+                                                        "properties": {
+                                                            "status": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "score": {
+                                                        "properties": {
+                                                            "frequency": {
+                                                                "type": "string"
+                                                            },
+                                                            "src": {
+                                                                "type": "string"
+                                                            },
+                                                            "tags": {
+                                                                "type": "string"
+                                                            },
+                                                            "total": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "src": {
+                                                        "properties": {
+                                                            "name": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "report": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "tags": {
+                                                        "properties": {
+                                                            "codes": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "str": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "threat": {
+                                                        "items": {
+                                                            "type": "string"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "title": {
+                                                        "type": "string"
+                                                    },
+                                                    "ttp": {
+                                                        "type": "array"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Lookup_URL_-_GET": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ParseJson"
+                                    }
+                                },
+                                "foreach": "@union(body('Entities_-_Get_URLs')?['URLs'],body('Entities_-_Get_URLs')?['URLs'])",
+                                "runAfter": {},
+                                "type": "Foreach"
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "not": {
+                                        "contains": [
+                                            "@string(parameters('trusted_urls'))",
+                                            "@uriHost(items('For_each_URL')?['Url]'])"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        "runAfter": {},
+                        "type": "If"
+                    }
+                },
+                "foreach": "@union(body('Entities_-_Get_URLs')?['URLs'],body('Entities_-_Get_URLs')?['URLs'])",
+                "runAfter": {
+                    "Entities_-_Get_URLs": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Initialize_DNSEntityArray": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DNSEntityArray",
+                            "type": "array",
+                            "value": "@array(triggerBody()?['object']?['properties']?['relatedEntities'])"
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "Initialize_variable_for_IP_flag": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Trusted_IP_Flag",
+                            "type": "boolean",
+                            "value": true
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Entities_-_Get_IPs": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "metadata": {
+            "author": "Yury Sergeev",
+            "categories": {
+                "domains": [
+                    "Security - Automation (SOAR)"
+                ]
+            },
+            "comments": "This playbook uses the RST Cloud API to automatically enrich IP, Domain, URL, Hash entities in incidents generated by Sentinel.",
+            "entities": [
+                "Ip",
+                "URL",
+                "FileHash",
+                "DnsResolution"
+            ],
+            "releaseNotes": [
+                {
+                    "notes": [
+                        "Initial version"
+                    ],
+                    "title": "Enrich multiple entities - RST IoC Lookup",
+                    "version": "1.0.0"
+                }
+            ],
+            "source": {
+                "kind": "Community"
+            },
+            "support": {
+                "tier": "community"
+            },
+            "tags": [
+                "Enrichment"
+            ],
+            "title": "Enrich multiple entities - RST IoC Lookup"
+        },
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            },
+            "rst_api_key": {
+                "defaultValue": "YOUR_RST_API_KEY",
+                "type": "String"
+            },
+            "trusted_domains": {
+                "defaultValue": [
+                    "rstcloud.net",
+                    "rstcloud.com"
+                ],
+                "type": "Array"
+            },
+            "trusted_ips": {
+                "defaultValue": [
+                    "192.168.",
+                    "10.",
+                    "127.",
+                    "172.16.",
+                    "172.17.",
+                    "172.18.",
+                    "172.19.",
+                    "172.20.",
+                    "172.21.",
+                    "172.22.",
+                    "172.23.",
+                    "172.24.",
+                    "172.25.",
+                    "172.26.",
+                    "172.27.",
+                    "172.28.",
+                    "172.29.",
+                    "172.30.",
+                    "172.31."
+                ],
+                "type": "Array"
+            },
+            "trusted_urls": {
+                "defaultValue": [
+                    "https://rstcloud.net",
+                    "https://rstcloud.com"
+                ],
+                "type": "Array"
+            }
+        },
+        "triggers": {
+            "Microsoft_Sentinel_incident": {
+                "inputs": {
+                    "body": {
+                        "callback_url": "@{listCallbackUrl()}"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "path": "/incident-creation"
+                },
+                "type": "ApiConnectionWebhook"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azuresentinel": {
+                    "connectionId": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/Sentinel/providers/Microsoft.Web/connections/azuresentinel",
+                    "connectionName": "azuresentinel",
+                    "id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Web/locations/eastus/managedApis/azuresentinel"
+                }
+            }
+        }
+    }
+}

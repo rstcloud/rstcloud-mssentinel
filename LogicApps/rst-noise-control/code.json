@@ -1,0 +1,600 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Entities_-_Get_FileHashes": {
+                "inputs": {
+                    "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/entities/filehash"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Entities_-_Get_IPs": {
+                "inputs": {
+                    "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/entities/ip"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Entities_-_Get_URLs": {
+                "inputs": {
+                    "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/entities/url"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Filter_DNSEntityArray": {
+                "inputs": {
+                    "from": "@variables('DNSEntityArray')",
+                    "where": "@equals(item()?['kind'], 'DnsResolution')"
+                },
+                "runAfter": {
+                    "Initialize_DNSEntityArray": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Query"
+            },
+            "For_each_Domain": {
+                "actions": {
+                    "Avoid_checking_internal_or_trusted_Hosts": {
+                        "actions": {
+                            "Lookup_Host_in_RST_Noise_Control": {
+                                "actions": {
+                                    "Add_comment_to_incident_(V3)_4": {
+                                        "inputs": {
+                                            "body": {
+                                                "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                "message": "<p>Is the the @{body('Parse_JSON_Domain')?['type']} @{body('Parse_JSON_Domain')?['value']} considered <strong>benign</strong>?<br>\nAnswer: <strong></strong><strong>@{body('Parse_JSON_Domain')?['benign']}</strong><strong></strong> ( <em>true</em> means yes, it is benign; <em>false</em> means is not bening)<br>\nThe reason is: @{body('Parse_JSON_Domain')?['reason']}</p>"
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/Incidents/Comment"
+                                        },
+                                        "runAfter": {
+                                            "Parse_JSON_Domain": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ApiConnection"
+                                    },
+                                    "Lookup_Domain_-_GET": {
+                                        "inputs": {
+                                            "headers": {
+                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                            },
+                                            "method": "GET",
+                                            "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('Lookup_Host_in_RST_Noise_Control')}"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Http"
+                                    },
+                                    "Parse_JSON_Domain": {
+                                        "inputs": {
+                                            "content": "@body('Lookup_Domain_-_GET')",
+                                            "schema": {
+                                                "properties": {
+                                                    "benign": {
+                                                        "type": "string"
+                                                    },
+                                                    "reason": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
+                                                    },
+                                                    "value": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Lookup_Domain_-_GET": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ParseJson"
+                                    }
+                                },
+                                "foreach": "@array(items('For_each_Domain')['properties']['domainName'])",
+                                "runAfter": {},
+                                "type": "Foreach"
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "contains": [
+                                        "",
+                                        "."
+                                    ]
+                                },
+                                {
+                                    "not": {
+                                        "contains": [
+                                            "@string(parameters('trusted_domains'))",
+                                            "@items('For_each_Domain')['properties']['domainName']"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        "runAfter": {},
+                        "type": "If"
+                    }
+                },
+                "foreach": "@body('Filter_DNSEntityArray')",
+                "runAfter": {
+                    "Filter_DNSEntityArray": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "For_each_Hash": {
+                "actions": {
+                    "Add_comment_to_incident_(V3)_3": {
+                        "inputs": {
+                            "body": {
+                                "incidentArmId": "@triggerBody()?['object']?['id']",
+                                "message": "<p>Is the the @{body('Parse_JSON_Hash')?['type']} @{body('Parse_JSON_Hash')?['value']} considered <strong>benign</strong>?<br>\nAnswer: <strong></strong><strong>@{body('Parse_JSON_Hash')?['benign']}</strong><strong></strong> ( <em>true</em> means yes, it is benign; <em>false</em> means is not bening)<br>\nThe reason is: @{body('Parse_JSON_Hash')?['reason']}</p>"
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/Incidents/Comment"
+                        },
+                        "runAfter": {
+                            "Parse_JSON_Hash": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "ApiConnection"
+                    },
+                    "Lookup_a_Hash_in_RST_Noise_Control": {
+                        "inputs": {
+                            "headers": {
+                                "X-Api-Key": "@parameters('rst_api_key')"
+                            },
+                            "method": "GET",
+                            "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('For_each_Hash')?['Value']}"
+                        },
+                        "runAfter": {},
+                        "type": "Http"
+                    },
+                    "Parse_JSON_Hash": {
+                        "inputs": {
+                            "content": "@body('Lookup_a_Hash_in_RST_Noise_Control')",
+                            "schema": {
+                                "properties": {
+                                    "benign": {
+                                        "type": "string"
+                                    },
+                                    "reason": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string"
+                                    },
+                                    "value": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "runAfter": {
+                            "Lookup_a_Hash_in_RST_Noise_Control": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "ParseJson"
+                    }
+                },
+                "foreach": "@union(body('Entities_-_Get_FileHashes')?['Filehashes'],body('Entities_-_Get_FileHashes')?['Filehashes'])",
+                "runAfter": {
+                    "Entities_-_Get_FileHashes": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "For_each_IP": {
+                "actions": {
+                    "For_each_trusted_IP_pattern": {
+                        "actions": {
+                            "Check_if_matches_any_trusted_pattern": {
+                                "actions": {
+                                    "Set_variable": {
+                                        "inputs": {
+                                            "name": "Trusted_IP_Flag",
+                                            "value": false
+                                        },
+                                        "runAfter": {},
+                                        "type": "SetVariable"
+                                    }
+                                },
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "startsWith": [
+                                                "@items('For_each_IP')?['Address']",
+                                                ""
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "runAfter": {},
+                                "type": "If"
+                            }
+                        },
+                        "foreach": "@parameters('trusted_ips')",
+                        "runAfter": {},
+                        "type": "Foreach"
+                    },
+                    "Lookup_if_not_trusted": {
+                        "actions": {
+                            "Lookup_IP_in_RST_Noise_Control": {
+                                "actions": {
+                                    "Add_comment_to_incident_(V3)": {
+                                        "inputs": {
+                                            "body": {
+                                                "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                "message": "<p>Is the the @{body('Parse_JSON_IP')?['type']} @{body('Parse_JSON_IP')?['value']} considered <strong>benign</strong>?<br>\nAnswer: <strong></strong><strong>@{body('Parse_JSON_IP')?['benign']}</strong><strong></strong> ( <em>true</em> means yes, it is benign; <em>false</em> means is not bening)<br>\nThe reason is: @{body('Parse_JSON_IP')?['reason']}</p>"
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/Incidents/Comment"
+                                        },
+                                        "runAfter": {
+                                            "Parse_JSON_IP": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ApiConnection"
+                                    },
+                                    "Lookup_IP_-_GET": {
+                                        "inputs": {
+                                            "headers": {
+                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                            },
+                                            "method": "GET",
+                                            "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('Lookup_IP_in_RST_Noise_Control')?['Address']}"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Http"
+                                    },
+                                    "Parse_JSON_IP": {
+                                        "inputs": {
+                                            "content": "@body('Lookup_IP_-_GET')",
+                                            "schema": {
+                                                "properties": {
+                                                    "benign": {
+                                                        "type": "string"
+                                                    },
+                                                    "reason": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
+                                                    },
+                                                    "value": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Lookup_IP_-_GET": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ParseJson"
+                                    }
+                                },
+                                "foreach": "@array(items('For_each_IP'))",
+                                "runAfter": {},
+                                "type": "Foreach"
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "equals": [
+                                        "@variables('Trusted_IP_Flag')",
+                                        false
+                                    ]
+                                }
+                            ]
+                        },
+                        "runAfter": {
+                            "For_each_trusted_IP_pattern": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "If"
+                    }
+                },
+                "foreach": "@union(body('Entities_-_Get_IPs')?['IPs'],body('Entities_-_Get_IPs')?['IPs'])",
+                "runAfter": {
+                    "Initialize_variable_for_IP_flag": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "For_each_URL": {
+                "actions": {
+                    "Avoid_checking_internal_or_trusted_URLs": {
+                        "actions": {
+                            "Lookup_URL_in_RST_Noise_Control": {
+                                "actions": {
+                                    "Add_comment_to_incident_(V3)_2": {
+                                        "inputs": {
+                                            "body": {
+                                                "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                "message": "<p>Is the the @{body('Parse_JSON_URL')?['type']} @{body('Parse_JSON_URL')?['value']} considered <strong>benign</strong>?<br>\nAnswer: <strong></strong><strong>@{body('Parse_JSON_URL')?['benign']}</strong><strong></strong> (<em>true</em> means yes, it is benign; <em>false</em> means is not bening)<br>\nThe reason is: @{body('Parse_JSON_URL')?['reason']}</p>"
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/Incidents/Comment"
+                                        },
+                                        "runAfter": {
+                                            "Parse_JSON_URL": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ApiConnection"
+                                    },
+                                    "Lookup_URL_-_GET": {
+                                        "inputs": {
+                                            "headers": {
+                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                            },
+                                            "method": "GET",
+                                            "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('Lookup_URL_in_RST_Noise_Control')?['Url']}"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Http"
+                                    },
+                                    "Parse_JSON_URL": {
+                                        "inputs": {
+                                            "content": "@body('Lookup_URL_-_GET')",
+                                            "schema": {
+                                                "properties": {
+                                                    "benign": {
+                                                        "type": "string"
+                                                    },
+                                                    "reason": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
+                                                    },
+                                                    "value": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Lookup_URL_-_GET": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "type": "ParseJson"
+                                    }
+                                },
+                                "foreach": "@union(body('Entities_-_Get_URLs')?['URLs'],body('Entities_-_Get_URLs')?['URLs'])",
+                                "runAfter": {},
+                                "type": "Foreach"
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "not": {
+                                        "contains": [
+                                            "@string(parameters('trusted_urls'))",
+                                            "@uriHost(items('For_each_URL')?['Url]'])"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        "runAfter": {},
+                        "type": "If"
+                    }
+                },
+                "foreach": "@union(body('Entities_-_Get_URLs')?['URLs'],body('Entities_-_Get_URLs')?['URLs'])",
+                "runAfter": {
+                    "Entities_-_Get_URLs": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Initialize_DNSEntityArray": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DNSEntityArray",
+                            "type": "array",
+                            "value": "@array(triggerBody()?['object']?['properties']?['relatedEntities'])"
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "Initialize_variable_for_IP_flag": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Trusted_IP_Flag",
+                            "type": "boolean",
+                            "value": true
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Entities_-_Get_IPs": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "metadata": {
+            "author": "Yury Sergeev",
+            "categories": {
+                "domains": [
+                    "Security - Automation (SOAR)"
+                ]
+            },
+            "comments": "This playbook uses the RST Cloud API to automatically enrich IP, Domain, URL, Hash entities in incidents generated by Sentinel.",
+            "entities": [
+                "Ip",
+                "URL",
+                "FileHash",
+                "DnsResolution"
+            ],
+            "releaseNotes": [
+                {
+                    "notes": [
+                        "Initial version"
+                    ],
+                    "title": "Enrich multiple entities - RST Noise Control",
+                    "version": "1.0.0"
+                }
+            ],
+            "source": {
+                "kind": "Community"
+            },
+            "support": {
+                "tier": "community"
+            },
+            "tags": [
+                "Enrichment"
+            ],
+            "title": "Enrich multiple entities - RST Noise Control"
+        },
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            },
+            "rst_api_key": {
+                "defaultValue": "YOU_RST_CLOUD_API_KEY",
+                "type": "String"
+            },
+            "trusted_domains": {
+                "defaultValue": [
+                    "rstcloud.net",
+                    "rstcloud.com"
+                ],
+                "type": "Array"
+            },
+            "trusted_ips": {
+                "defaultValue": [
+                    "192.168.",
+                    "10.",
+                    "127.",
+                    "172.16.",
+                    "172.17.",
+                    "172.18.",
+                    "172.19.",
+                    "172.20.",
+                    "172.21.",
+                    "172.22.",
+                    "172.23.",
+                    "172.24.",
+                    "172.25.",
+                    "172.26.",
+                    "172.27.",
+                    "172.28.",
+                    "172.29.",
+                    "172.30.",
+                    "172.31."
+                ],
+                "type": "Array"
+            },
+            "trusted_urls": {
+                "defaultValue": [
+                    "https://rstcloud.net",
+                    "https://rstcloud.com"
+                ],
+                "type": "Array"
+            }
+        },
+        "triggers": {
+            "Microsoft_Sentinel_incident": {
+                "inputs": {
+                    "body": {
+                        "callback_url": "@{listCallbackUrl()}"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                        }
+                    },
+                    "path": "/incident-creation"
+                },
+                "type": "ApiConnectionWebhook"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azuresentinel": {
+                    "connectionId": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/Sentinel/providers/Microsoft.Web/connections/azuresentinel",
+                    "connectionName": "azuresentinel",
+                    "id": "/subscriptions/12345678-1234-1234-1234-123456789012/providers/Microsoft.Web/locations/eastus/managedApis/azuresentinel"
+                }
+            }
+        }
+    }
+}
