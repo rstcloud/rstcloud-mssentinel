@@ -2,7 +2,7 @@
 
 ## Overview
 
-This Python script is designed to facilitate the bulk removal of Azure Threat Intelligence Indicators from an Azure Sentinel workspace. It leverages Azure SDK for Python and Azure Identity Library for authentication.
+This Python script is designed to facilitate the bulk removal of Azure Threat Intelligence Indicators from a Microsoft Sentinel workspace. It leverages Azure SDK for Python and Azure Identity Library for authentication.
 
 ## Requirements
 
