@@ -66,7 +66,7 @@
                                         "inputs": {
                                             "body": {
                                                 "incidentArmId": "@triggerBody()?['object']?['id']",
-                                                "message": "<p>Is the the @{body('Parse_JSON_Domain')?['type']} @{body('Parse_JSON_Domain')?['value']} considered <strong>benign</strong>?<br>\nAnswer: <strong></strong><strong>@{body('Parse_JSON_Domain')?['benign']}</strong><strong></strong> ( <em>true</em> means yes, it is benign; <em>false</em> means is not bening)<br>\nThe reason is: @{body('Parse_JSON_Domain')?['reason']}</p>"
+                                                "message": "<p>Can the @{body('Parse_JSON_Domain')?['type']} @{body('Parse_JSON_Domain')?['value']} be considered <strong>benign</strong>?<br>\nAnswer: <strong>@{body('Parse_JSON_Domain')?['benign']}</strong> ( <em>true</em> means yes, it might be benign or a well-known value; <em>false</em> means no mentions was found that it is benign)<br>\nThe reason is: @{body('Parse_JSON_Domain')?['reason']}\n\nIf the reason has \"Drop\" in it, it is likely a benign value, if it has \"Change Score\" it may be just a popular entity that still requires investigation.</p>"
                                             },
                                             "host": {
                                                 "connection": {
@@ -164,7 +164,7 @@
                         "inputs": {
                             "body": {
                                 "incidentArmId": "@triggerBody()?['object']?['id']",
-                                "message": "<p>Is the the @{body('Parse_JSON_Hash')?['type']} @{body('Parse_JSON_Hash')?['value']} considered <strong>benign</strong>?<br>\nAnswer: <strong></strong><strong>@{body('Parse_JSON_Hash')?['benign']}</strong><strong></strong> ( <em>true</em> means yes, it is benign; <em>false</em> means is not bening)<br>\nThe reason is: @{body('Parse_JSON_Hash')?['reason']}</p>"
+                                "message": "<p>Can the @{body('Parse_JSON_Hash')?['type']} @{body('Parse_JSON_Hash')?['value']} be considered <strong>benign</strong>?<br>\nAnswer: <strong>@{body('Parse_JSON_Hash')?['benign']}</strong> ( <em>true</em> means yes, it might be benign or a well-known value; <em>false</em> means no mentions was found that it is benign)<br>\nThe reason is: @{body('Parse_JSON_Hash')?['reason']}\n\nIf the reason has \"Drop\" in it, it is likely a benign value, if it has \"Change Score\" it may be just a popular entity that still requires investigation.</p>"
                             },
                             "host": {
                                 "connection": {
@@ -238,7 +238,7 @@
                                     "Set_variable": {
                                         "inputs": {
                                             "name": "Trusted_IP_Flag",
-                                            "value": false
+                                            "value": true
                                         },
                                         "runAfter": {},
                                         "type": "SetVariable"
@@ -248,8 +248,8 @@
                                     "and": [
                                         {
                                             "startsWith": [
-                                                "@items('For_each_IP')?['Address']",
-                                                ""
+                                                "@{items('For_each_IP')['Address']}",
+                                                "@items('For_each_trusted_IP_pattern')"
                                             ]
                                         }
                                     ]
@@ -270,7 +270,7 @@
                                         "inputs": {
                                             "body": {
                                                 "incidentArmId": "@triggerBody()?['object']?['id']",
-                                                "message": "<p>Is the the @{body('Parse_JSON_IP')?['type']} @{body('Parse_JSON_IP')?['value']} considered <strong>benign</strong>?<br>\nAnswer: <strong></strong><strong>@{body('Parse_JSON_IP')?['benign']}</strong><strong></strong> ( <em>true</em> means yes, it is benign; <em>false</em> means is not bening)<br>\nThe reason is: @{body('Parse_JSON_IP')?['reason']}</p>"
+                                                "message": "<p>Can the @{body('Parse_JSON_IP')?['type']} @{body('Parse_JSON_IP')?['value']} be considered <strong>benign</strong>?<br>\nAnswer: <strong>@{body('Parse_JSON_IP')?['benign']}</strong> ( <em>true</em> means yes, it might be benign or a well-known value; <em>false</em> means no mentions was found that it is benign)<br>\nThe reason is: @{body('Parse_JSON_IP')?['reason']}\n\nIf the reason has \"Drop\" in it, it is likely a benign value, if it has \"Change Score\" it may be just a popular entity that still requires investigation.</p>"
                                             },
                                             "host": {
                                                 "connection": {
@@ -293,7 +293,7 @@
                                                 "X-Api-Key": "@parameters('rst_api_key')"
                                             },
                                             "method": "GET",
-                                            "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('Lookup_IP_in_RST_Noise_Control')?['Address']}"
+                                            "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('For_each_IP')['Address']}"
                                         },
                                         "runAfter": {},
                                         "type": "Http"
@@ -348,6 +348,18 @@
                             ]
                         },
                         "type": "If"
+                    },
+                    "Reset_flag": {
+                        "inputs": {
+                            "name": "Trusted_IP_Flag",
+                            "value": false
+                        },
+                        "runAfter": {
+                            "Lookup_if_not_trusted": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
                     }
                 },
                 "foreach": "@union(body('Entities_-_Get_IPs')?['IPs'],body('Entities_-_Get_IPs')?['IPs'])",
@@ -355,6 +367,11 @@
                     "Initialize_variable_for_IP_flag": [
                         "Succeeded"
                     ]
+                },
+                "runtimeConfiguration": {
+                    "concurrency": {
+                        "repetitions": 1
+                    }
                 },
                 "type": "Foreach"
             },
@@ -368,7 +385,7 @@
                                         "inputs": {
                                             "body": {
                                                 "incidentArmId": "@triggerBody()?['object']?['id']",
-                                                "message": "<p>Is the the @{body('Parse_JSON_URL')?['type']} @{body('Parse_JSON_URL')?['value']} considered <strong>benign</strong>?<br>\nAnswer: <strong></strong><strong>@{body('Parse_JSON_URL')?['benign']}</strong><strong></strong> (<em>true</em> means yes, it is benign; <em>false</em> means is not bening)<br>\nThe reason is: @{body('Parse_JSON_URL')?['reason']}</p>"
+                                                "message": "<p>Can the @{body('Parse_JSON_URL')?['type']} @{body('Parse_JSON_URL')?['value']} be considered <strong>benign</strong>?<br>\nAnswer: <strong>@{body('Parse_JSON_URL')?['benign']}</strong> (<em>true</em> means yes, it might be benign or a well-known value; <em>false</em> means no mentions was found that it is benign)<br>\nThe reason is: @{body('Parse_JSON_URL')?['reason']}\n\nIf the reason has \"Drop\" in it, it is likely a benign value, if it has \"Change Score\" it may be just a popular entity that still requires investigation.</p>"
                                             },
                                             "host": {
                                                 "connection": {
@@ -436,7 +453,7 @@
                                     "not": {
                                         "contains": [
                                             "@string(parameters('trusted_urls'))",
-                                            "@uriHost(items('For_each_URL')?['Url]'])"
+                                            "@uriHost(items('For_each_URL')?['url]'])"
                                         ]
                                     }
                                 }
@@ -473,7 +490,7 @@
                         {
                             "name": "Trusted_IP_Flag",
                             "type": "boolean",
-                            "value": true
+                            "value": false
                         }
                     ]
                 },
