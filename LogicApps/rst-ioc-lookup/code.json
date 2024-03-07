@@ -482,7 +482,7 @@
                                     "Set_variable": {
                                         "inputs": {
                                             "name": "Trusted_IP_Flag",
-                                            "value": false
+                                            "value": true
                                         },
                                         "runAfter": {},
                                         "type": "SetVariable"
@@ -493,7 +493,7 @@
                                         {
                                             "startsWith": [
                                                 "@items('For_each_IP')?['Address']",
-                                                ""
+                                                "@items('For_each_trusted_IP_pattern')"
                                             ]
                                         }
                                     ]
@@ -745,6 +745,18 @@
                             ]
                         },
                         "type": "If"
+                    },
+                    "Set_variable_2": {
+                        "inputs": {
+                            "name": "Trusted_IP_Flag",
+                            "value": false
+                        },
+                        "runAfter": {
+                            "Lookup_if_not_trusted": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
                     }
                 },
                 "foreach": "@union(body('Entities_-_Get_IPs')?['IPs'],body('Entities_-_Get_IPs')?['IPs'])",
@@ -752,6 +764,11 @@
                     "Initialize_variable_for_IP_flag": [
                         "Succeeded"
                     ]
+                },
+                "runtimeConfiguration": {
+                    "concurrency": {
+                        "repetitions": 1
+                    }
                 },
                 "type": "Foreach"
             },
@@ -946,7 +963,7 @@
                                     "not": {
                                         "contains": [
                                             "@string(parameters('trusted_urls'))",
-                                            "@uriHost(items('For_each_URL')?['Url]'])"
+                                            "@uriHost(items('For_each_URL')?['url]'])"
                                         ]
                                     }
                                 }
@@ -983,7 +1000,7 @@
                         {
                             "name": "Trusted_IP_Flag",
                             "type": "boolean",
-                            "value": true
+                            "value": false
                         }
                     ]
                 },
