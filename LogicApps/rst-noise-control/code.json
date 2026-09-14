@@ -13,7 +13,11 @@
                     "method": "post",
                     "path": "/entities/filehash"
                 },
-                "runAfter": {},
+                "runAfter": {
+                    "Get_RST_API_Key_from_Key_Vault": [
+                        "Succeeded"
+                    ]
+                },
                 "type": "ApiConnection"
             },
             "Entities_-_Get_IPs": {
@@ -27,7 +31,11 @@
                     "method": "post",
                     "path": "/entities/ip"
                 },
-                "runAfter": {},
+                "runAfter": {
+                    "Get_RST_API_Key_from_Key_Vault": [
+                        "Succeeded"
+                    ]
+                },
                 "type": "ApiConnection"
             },
             "Entities_-_Get_URLs": {
@@ -41,7 +49,11 @@
                     "method": "post",
                     "path": "/entities/url"
                 },
-                "runAfter": {},
+                "runAfter": {
+                    "Get_RST_API_Key_from_Key_Vault": [
+                        "Succeeded"
+                    ]
+                },
                 "type": "ApiConnection"
             },
             "Filter_DNSEntityArray": {
@@ -86,7 +98,7 @@
                                     "Lookup_Domain_-_GET": {
                                         "inputs": {
                                             "headers": {
-                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                                "X-Api-Key": "@body('Get_RST_API_Key_from_Key_Vault')?['value']"
                                             },
                                             "method": "GET",
                                             "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('Lookup_Host_in_RST_Noise_Control')}"
@@ -184,7 +196,7 @@
                     "Lookup_a_Hash_in_RST_Noise_Control": {
                         "inputs": {
                             "headers": {
-                                "X-Api-Key": "@parameters('rst_api_key')"
+                                "X-Api-Key": "@body('Get_RST_API_Key_from_Key_Vault')?['value']"
                             },
                             "method": "GET",
                             "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('For_each_Hash')?['Value']}"
@@ -290,7 +302,7 @@
                                     "Lookup_IP_-_GET": {
                                         "inputs": {
                                             "headers": {
-                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                                "X-Api-Key": "@body('Get_RST_API_Key_from_Key_Vault')?['value']"
                                             },
                                             "method": "GET",
                                             "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('For_each_IP')['Address']}"
@@ -405,7 +417,7 @@
                                     "Lookup_URL_-_GET": {
                                         "inputs": {
                                             "headers": {
-                                                "X-Api-Key": "@parameters('rst_api_key')"
+                                                "X-Api-Key": "@body('Get_RST_API_Key_from_Key_Vault')?['value']"
                                             },
                                             "method": "GET",
                                             "uri": "https://api.rstcloud.net/v1/benign/lookup?value=@{items('Lookup_URL_in_RST_Noise_Control')?['Url']}"
@@ -471,6 +483,26 @@
                 },
                 "type": "Foreach"
             },
+            "Get_RST_API_Key_from_Key_Vault": {
+                "inputs": {
+                    "authentication": {
+                        "audience": "https://vault.azure.net",
+                        "type": "ManagedServiceIdentity"
+                    },
+                    "method": "GET",
+                    "uri": "@{parameters('keyvault_secret_uri')}?api-version=7.4"
+                },
+                "runAfter": {},
+                "runtimeConfiguration": {
+                    "secureData": {
+                        "properties": [
+                            "inputs",
+                            "outputs"
+                        ]
+                    }
+                },
+                "type": "Http"
+            },
             "Initialize_DNSEntityArray": {
                 "inputs": {
                     "variables": [
@@ -481,7 +513,11 @@
                         }
                     ]
                 },
-                "runAfter": {},
+                "runAfter": {
+                    "Get_RST_API_Key_from_Key_Vault": [
+                        "Succeeded"
+                    ]
+                },
                 "type": "InitializeVariable"
             },
             "Initialize_variable_for_IP_flag": {
@@ -543,8 +579,8 @@
                 "defaultValue": {},
                 "type": "Object"
             },
-            "rst_api_key": {
-                "defaultValue": "YOU_RST_CLOUD_API_KEY",
+            "keyvault_secret_uri": {
+                "defaultValue": "https://<KEY_VAULT_NAME>.vault.azure.net/secrets/<SECRET_NAME>",
                 "type": "String"
             },
             "trusted_domains": {
