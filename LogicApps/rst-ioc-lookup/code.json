@@ -74,26 +74,47 @@
                         "actions": {
                             "Lookup_Host_in_RST_IoC_Lookup": {
                                 "actions": {
-                                    "Add_comment_to_incident_(V3)_4": {
-                                        "inputs": {
-                                            "body": {
-                                                "incidentArmId": "@triggerBody()?['object']?['id']",
-                                                "message": "<p>Found a match for @{body('Parse_JSON_Domain')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_Domain')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Domain')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Domain')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_Domain')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_Domain')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_Domain')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_Domain')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_Domain')}</p>"
-                                            },
-                                            "host": {
-                                                "connection": {
-                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                    "Has_enrichment_Domain": {
+                                        "actions": {
+                                            "Add_comment_to_incident_(V3)_4": {
+                                                "inputs": {
+                                                    "body": {
+                                                        "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                        "message": "<p>Found a match for @{body('Parse_JSON_Domain')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_Domain')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Domain')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Domain')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_Domain')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_Domain')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_Domain')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_Domain')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_Domain')}</p>"
+                                                    },
+                                                    "host": {
+                                                        "connection": {
+                                                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                        }
+                                                    },
+                                                    "method": "post",
+                                                    "path": "/Incidents/Comment"
+                                                },
+                                                "runAfter": {},
+                                                "type": "ApiConnection"
+                                            }
+                                        },
+                                        "else": {
+                                            "actions": {}
+                                        },
+                                        "expression": {
+                                            "and": [
+                                                {
+                                                    "not": {
+                                                        "equals": [
+                                                            "@coalesce(body('Parse_JSON_Domain')?['score']?['total'], '')",
+                                                            ""
+                                                        ]
+                                                    }
                                                 }
-                                            },
-                                            "method": "post",
-                                            "path": "/Incidents/Comment"
+                                            ]
                                         },
                                         "runAfter": {
                                             "Parse_JSON_Domain": [
                                                 "Succeeded"
                                             ]
                                         },
-                                        "type": "ApiConnection"
+                                        "type": "If"
                                     },
                                     "Lookup_Domain_-_GET": {
                                         "inputs": {
@@ -312,26 +333,47 @@
             },
             "For_each_Hash": {
                 "actions": {
-                    "Add_comment_to_incident_(V3)_3": {
-                        "inputs": {
-                            "body": {
-                                "incidentArmId": "@triggerBody()?['object']?['id']",
-                                "message": "<p>Found a match for @{body('Parse_JSON_Hash')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_Hash')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Hash')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Hash')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_Hash')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_Hash')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_Hash')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_Hash')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_Hash')}</p>"
-                            },
-                            "host": {
-                                "connection": {
-                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                    "Has_enrichment_Hash": {
+                        "actions": {
+                            "Add_comment_to_incident_(V3)_3": {
+                                "inputs": {
+                                    "body": {
+                                        "incidentArmId": "@triggerBody()?['object']?['id']",
+                                        "message": "<p>Found a match for @{body('Parse_JSON_Hash')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_Hash')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Hash')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_Hash')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_Hash')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_Hash')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_Hash')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_Hash')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_Hash')}</p>"
+                                    },
+                                    "host": {
+                                        "connection": {
+                                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "path": "/Incidents/Comment"
+                                },
+                                "runAfter": {},
+                                "type": "ApiConnection"
+                            }
+                        },
+                        "else": {
+                            "actions": {}
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "not": {
+                                        "equals": [
+                                            "@coalesce(body('Parse_JSON_Hash')?['score']?['total'], '')",
+                                            ""
+                                        ]
+                                    }
                                 }
-                            },
-                            "method": "post",
-                            "path": "/Incidents/Comment"
+                            ]
                         },
                         "runAfter": {
                             "Parse_JSON_Hash": [
                                 "Succeeded"
                             ]
                         },
-                        "type": "ApiConnection"
+                        "type": "If"
                     },
                     "Lookup_a_Hash_in_RST_IoC_Lookup": {
                         "inputs": {
@@ -522,26 +564,47 @@
                         "actions": {
                             "Lookup_IP_in_RST_IoC_Lookup": {
                                 "actions": {
-                                    "Add_comment_to_incident_(V3)": {
-                                        "inputs": {
-                                            "body": {
-                                                "incidentArmId": "@triggerBody()?['object']?['id']",
-                                                "message": "<p>Found a match for @{body('Parse_JSON_IP')?['ioc_value']}<br>\nThe score is <strong></strong><strong>@{body('Parse_JSON_IP')?['score']?['total']}</strong><strong></strong>. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_IP')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_IP')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_IP')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_IP')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_IP')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_IP')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<span style=\"font-size: 8px\"><br>\n</span><span style=\"font-size: 10px\"></span><span style=\"font-size: 10px\">@{body('Parse_JSON_IP')}</span><span style=\"font-size: 10px\"></span></p>"
-                                            },
-                                            "host": {
-                                                "connection": {
-                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                    "Has_enrichment_IP": {
+                                        "actions": {
+                                            "Add_comment_to_incident_(V3)": {
+                                                "inputs": {
+                                                    "body": {
+                                                        "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                        "message": "<p>Found a match for @{body('Parse_JSON_IP')?['ioc_value']}<br>\nThe score is <strong></strong><strong>@{body('Parse_JSON_IP')?['score']?['total']}</strong><strong></strong>. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_IP')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_IP')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_IP')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_IP')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_IP')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_IP')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<span style=\"font-size: 8px\"><br>\n</span><span style=\"font-size: 10px\"></span><span style=\"font-size: 10px\">@{body('Parse_JSON_IP')}</span><span style=\"font-size: 10px\"></span></p>"
+                                                    },
+                                                    "host": {
+                                                        "connection": {
+                                                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                        }
+                                                    },
+                                                    "method": "post",
+                                                    "path": "/Incidents/Comment"
+                                                },
+                                                "runAfter": {},
+                                                "type": "ApiConnection"
+                                            }
+                                        },
+                                        "else": {
+                                            "actions": {}
+                                        },
+                                        "expression": {
+                                            "and": [
+                                                {
+                                                    "not": {
+                                                        "equals": [
+                                                            "@coalesce(body('Parse_JSON_IP')?['score']?['total'], '')",
+                                                            ""
+                                                        ]
+                                                    }
                                                 }
-                                            },
-                                            "method": "post",
-                                            "path": "/Incidents/Comment"
+                                            ]
                                         },
                                         "runAfter": {
                                             "Parse_JSON_IP": [
                                                 "Succeeded"
                                             ]
                                         },
-                                        "type": "ApiConnection"
+                                        "type": "If"
                                     },
                                     "Lookup_IP_-_GET": {
                                         "inputs": {
@@ -790,26 +853,47 @@
                         "actions": {
                             "Lookup_URL_in_RST_IoC_Lookup": {
                                 "actions": {
-                                    "Add_comment_to_incident_(V3)_2": {
-                                        "inputs": {
-                                            "body": {
-                                                "incidentArmId": "@triggerBody()?['object']?['id']",
-                                                "message": "<p>Found a match for @{body('Parse_JSON_URL')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_URL')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_URL')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_URL')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_URL')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_URL')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_URL')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_URL')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_URL')}</p>"
-                                            },
-                                            "host": {
-                                                "connection": {
-                                                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                    "Has_enrichment_URL": {
+                                        "actions": {
+                                            "Add_comment_to_incident_(V3)_2": {
+                                                "inputs": {
+                                                    "body": {
+                                                        "incidentArmId": "@triggerBody()?['object']?['id']",
+                                                        "message": "<p>Found a match for @{body('Parse_JSON_URL')?['ioc_value']}<br>\nThe score is @{body('Parse_JSON_URL')?['score']?['total']}. It was first seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_URL')?['fseen']), 'second'), 'yyyy-MM-dd')}; last seen on @{formatDateTime(addToTime('1970-01-01T00:00:00Z', int(body('Parse_JSON_URL')?['lseen']), 'second'), 'yyyy-MM-dd')}.<br>\nThe associated tags are: @{body('Parse_JSON_URL')?['tags']?['str']}<br>\nRelated threats: @{body('Parse_JSON_URL')?['threat']}<br>\nData was found on the following resources:<br>\n@{body('Parse_JSON_URL')?['src']?['name']}<br>\nReferences:<br>\n@{replace(body('Parse_JSON_URL')?['src']?['report'], ',', '\\n ')}<br>\nRaw reponse:<br>\n@{body('Parse_JSON_URL')}</p>"
+                                                    },
+                                                    "host": {
+                                                        "connection": {
+                                                            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                                        }
+                                                    },
+                                                    "method": "post",
+                                                    "path": "/Incidents/Comment"
+                                                },
+                                                "runAfter": {},
+                                                "type": "ApiConnection"
+                                            }
+                                        },
+                                        "else": {
+                                            "actions": {}
+                                        },
+                                        "expression": {
+                                            "and": [
+                                                {
+                                                    "not": {
+                                                        "equals": [
+                                                            "@coalesce(body('Parse_JSON_URL')?['score']?['total'], '')",
+                                                            ""
+                                                        ]
+                                                    }
                                                 }
-                                            },
-                                            "method": "post",
-                                            "path": "/Incidents/Comment"
+                                            ]
                                         },
                                         "runAfter": {
                                             "Parse_JSON_URL": [
                                                 "Succeeded"
                                             ]
                                         },
-                                        "type": "ApiConnection"
+                                        "type": "If"
                                     },
                                     "Lookup_URL_-_GET": {
                                         "inputs": {
